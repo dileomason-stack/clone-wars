@@ -216,12 +216,12 @@ function frame(timestamp) {
   }
 
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  drawBackground(ctx, CONFIG.canvasWidth, CONFIG.canvasHeight, reduceMotion ? 0 : timestamp / 1000);
+  drawThemeBackground(ctx, CONFIG.canvasWidth, CONFIG.canvasHeight, reduceMotion ? 0 : timestamp / 1000);
   for (const pipe of pipes) {
     drawPipe(ctx, pipe.x, pipe.gapTop, pipe.gapBottom, CONFIG.pipeWidth, CONFIG.canvasHeight - CONFIG.groundHeight);
     drawLaserBeam(pipe);
   }
-  drawGround(ctx, CONFIG.canvasWidth, CONFIG.canvasHeight, CONFIG.groundHeight, groundOffset);
+  drawThemeGround(ctx, CONFIG.canvasWidth, CONFIG.canvasHeight, CONFIG.groundHeight, groundOffset);
   drawBird(ctx, birdX, y, CONFIG.birdSize, velocity);
   if (state === 'playing') {
     ctx.save();
@@ -239,3 +239,25 @@ function frame(timestamp) {
 
 showReady();
 requestAnimationFrame(frame);
+
+
+function drawBeachBackground(ctx, width, height, time) {
+  ctx.save();
+  const sky = ctx.createLinearGradient(0, 0, 0, height); sky.addColorStop(0, '#55c9ee'); sky.addColorStop(0.64, '#b9f1ed'); sky.addColorStop(1, '#f7d895'); ctx.fillStyle = sky; ctx.fillRect(0, 0, width, height);
+  ctx.fillStyle = '#ffe07a'; ctx.beginPath(); ctx.arc(width * 0.78, height * 0.18, 32, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.82)'; const shift = (time * 8) % (width + 90);
+  for (const cloud of [[48,118,1],[235,78,0.78]]) { const x = (cloud[0] + shift) % (width + 90) - 45; const y = cloud[1]; const s = cloud[2]; ctx.beginPath(); ctx.arc(x,y,15*s,0,Math.PI*2); ctx.arc(x+18*s,y-7*s,21*s,0,Math.PI*2); ctx.arc(x+42*s,y,14*s,0,Math.PI*2); ctx.fill(); }
+  const horizon = height - 152; ctx.fillStyle = '#38b9c4'; ctx.fillRect(0, horizon, width, 56); ctx.strokeStyle = 'rgba(230,255,249,0.72)'; ctx.lineWidth = 3;
+  for (let row = horizon + 12; row < horizon + 52; row += 16) { ctx.beginPath(); for (let x = -20; x < width + 24; x += 34) { ctx.moveTo(x,row); ctx.quadraticCurveTo(x+8,row-5,x+17,row); ctx.quadraticCurveTo(x+25,row+5,x+34,row); } ctx.stroke(); }
+  ctx.fillStyle = '#2c9b70'; ctx.fillRect(width*0.1,horizon-18,7,24); ctx.fillRect(width*0.14,horizon-12,6,18); ctx.fillStyle = '#3fc479'; ctx.beginPath(); ctx.arc(width*0.1,horizon-24,16,0,Math.PI*2); ctx.arc(width*0.15,horizon-20,13,0,Math.PI*2); ctx.fill(); ctx.restore();
+}
+function drawArtClassBackground(ctx, width, height, time) {
+  ctx.save(); const paper = ctx.createLinearGradient(0,0,width,height); paper.addColorStop(0,'#ffec9e'); paper.addColorStop(0.45,'#ffd0e7'); paper.addColorStop(1,'#b8f3e6'); ctx.fillStyle = paper; ctx.fillRect(0,0,width,height);
+  const brush=(x,y,w,h,color,angle)=>{ctx.save();ctx.translate(x,y);ctx.rotate(angle);ctx.fillStyle=color;ctx.fillRect(-w/2,-h/2,w,h);ctx.restore();}; brush(width*.18,112,130,24,'rgba(255,106,156,.72)',-.18); brush(width*.78,168,150,28,'rgba(65,191,232,.7)',.22); brush(width*.52,238,170,30,'rgba(255,201,73,.78)',-.1);
+  const splats=[[42,72,'#f05d8b'],[305,98,'#36b7ca'],[82,276,'#8f73df'],[280,320,'#f4a63b'],[175,142,'#4cc98b']]; for(const s of splats){ctx.fillStyle=s[2];ctx.beginPath();ctx.arc(s[0],s[1],s[2]==='#4cc98b'?13:10,0,Math.PI*2);ctx.fill();ctx.fillRect(s[0]+15,s[1]-5,5,5);ctx.fillRect(s[0]-20,s[1]+10,6,6);}
+  ctx.strokeStyle='rgba(255,255,255,.8)';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(0,360+Math.sin(time*1.4)*8);ctx.bezierCurveTo(width*.25,320,width*.56,410,width,350);ctx.stroke();ctx.restore();
+}
+function drawBeachGround(ctx, width, height, groundHeight, offset) { ctx.save(); const top=height-groundHeight; ctx.fillStyle='#f4d28d';ctx.fillRect(0,top,width,groundHeight);ctx.fillStyle='#fff2ba';ctx.fillRect(0,top,width,7);ctx.fillStyle='#d9b66f';const shift=-(offset%42);for(let x=shift-42;x<width+42;x+=42){ctx.beginPath();ctx.arc(x+12,top+26,3,0,Math.PI*2);ctx.arc(x+27,top+54,2,0,Math.PI*2);ctx.fill();}ctx.restore(); }
+function drawArtClassGround(ctx, width, height, groundHeight, offset) { ctx.save();const top=height-groundHeight;ctx.fillStyle='#f6f0dc';ctx.fillRect(0,top,width,groundHeight);ctx.fillStyle='#ef5d8b';ctx.fillRect(0,top,width,7);const colors=['#41bed0','#f5be3f','#8e72d8','#55bd79'];const shift=-(offset%52);let i=0;for(let x=shift-52;x<width+52;x+=52){ctx.fillStyle=colors[i++%colors.length];ctx.fillRect(x+8,top+21,18,10);ctx.fillRect(x+31,top+45,9,9);}ctx.restore(); }
+function drawThemeBackground(ctx, width, height, time) { if(score>=20) drawArtClassBackground(ctx,width,height,time); else if(score>=10) drawBeachBackground(ctx,width,height,time); else drawBackground(ctx,width,height,time); }
+function drawThemeGround(ctx, width, height, groundHeight, offset) { if(score>=20) drawArtClassGround(ctx,width,height,groundHeight,offset); else if(score>=10) drawBeachGround(ctx,width,height,groundHeight,offset); else drawGround(ctx,width,height,groundHeight,offset); }
