@@ -159,7 +159,7 @@ function addPipe(pipeGap) {
   const gapTop = Math.max(60, Math.min(lowest, lastGapTop + (Math.random() * 360 - 180)));
   const gapBottom = gapTop + gap;
   lastGapTop = gapTop;
-  pipes.push({ x: CONFIG.canvasWidth, gapTop: gapTop, gapBottom: gapBottom, scored: false });
+  pipes.push({ x: CONFIG.canvasWidth, gapTop: gapTop, gapBottom: gapBottom, scored: false, laser: CONFIG.fix === 'custom' ? { x: CONFIG.canvasWidth + 12, y: Math.max(8, gapTop - 8), radius: 7, speed: CONFIG.pipeSpeed * 1.35 } : null });
   pipesMade += 1;
 }
 
@@ -175,16 +175,16 @@ function crash() {
 }
 
 function drawLaserBeam(pipe) {
-  if (CONFIG.fix !== 'custom') return;
+  if (!pipe.laser) return;
   const beamY = Math.max(8, pipe.gapTop - 8);
   ctx.save();
-  ctx.strokeStyle = '#ff4d6d';
-  ctx.shadowColor = '#ff4d6d';
+  ctx.fillStyle = '#ff334f';
+  ctx.shadowColor = '#ff334f';
   ctx.shadowBlur = 10;
   ctx.lineWidth = 4;
   ctx.beginPath();
-  ctx.moveTo(CONFIG.canvasWidth, beamY);
-  ctx.lineTo(pipe.x + CONFIG.pipeWidth, beamY);
+  ctx.arc(pipe.laser.x, pipe.laser.y, pipe.laser.radius, 0, Math.PI * 2);
+  ctx.fill();
   ctx.stroke();
   ctx.restore();
 }
@@ -203,14 +203,14 @@ function frame(timestamp) {
     if (pipes.length === 0) addPipe(pipeGap);
     else if (pipes[pipes.length - 1].x <= CONFIG.canvasWidth - CONFIG.pipeSpacing) addPipe(pipeGap);
     for (const pipe of pipes) {
-      pipe.x -= pipeSpeed * seconds;
+      pipe.x -= pipeSpeed * seconds; if (pipe.laser) pipe.laser.x -= pipe.laser.speed * seconds;
       if (!pipe.scored && pipe.x + CONFIG.pipeWidth < birdX) { pipe.scored = true; score += 1; play('score'); }
     }
     pipes = pipes.filter((pipe) => pipe.x + CONFIG.pipeWidth > 0);
     const birdHalf = CONFIG.birdSize / 2;
     const touchesEdge = y + birdHalf >= CONFIG.canvasHeight - CONFIG.groundHeight || y - birdHalf <= 0;
     const touchesPipe = pipes.some((pipe) => birdX + birdHalf >= pipe.x && birdX - birdHalf <= pipe.x + CONFIG.pipeWidth && (y - birdHalf <= pipe.gapTop || y + birdHalf >= pipe.gapBottom));
-    if (touchesEdge || touchesPipe) crash();
+    if (touchesEdge || touchesPipe || pipes.some((pipe) => pipe.laser && Math.hypot(pipe.laser.x - birdX, pipe.laser.y - y) <= birdHalf + pipe.laser.radius)) crash();
   } else if (state === 'gameover') {
     secondsSinceCrash += seconds;
   }
