@@ -176,7 +176,7 @@ function crash() {
 
 function drawLaserBeam(pipe) {
   if (CONFIG.fix !== 'custom') return;
-  const beamY = Math.max(8, pipe.gapTop - 8);
+  const beamY = pipe.gapTop + (pipe.gapBottom - pipe.gapTop) / 2;
   ctx.save();
   ctx.strokeStyle = '#ff4d6d';
   ctx.shadowColor = '#ff4d6d';
@@ -187,6 +187,16 @@ function drawLaserBeam(pipe) {
   ctx.lineTo(pipe.x + CONFIG.pipeWidth, beamY);
   ctx.stroke();
   ctx.restore();
+}
+
+function laserTouchesBird(pipe, birdHalf) {
+  if (CONFIG.fix !== 'custom') return false;
+  const beamY = pipe.gapTop + (pipe.gapBottom - pipe.gapTop) / 2;
+  const beamHalf = 3;
+  const beamStarts = pipe.x + CONFIG.pipeWidth;
+  const overlapsHorizontally = birdX + birdHalf >= beamStarts && birdX - birdHalf <= CONFIG.canvasWidth;
+  const overlapsVertically = y + birdHalf >= beamY - beamHalf && y - birdHalf <= beamY + beamHalf;
+  return overlapsHorizontally && overlapsVertically;
 }
 
 function frame(timestamp) {
@@ -210,7 +220,8 @@ function frame(timestamp) {
     const birdHalf = CONFIG.birdSize / 2;
     const touchesEdge = y + birdHalf >= CONFIG.canvasHeight - CONFIG.groundHeight || y - birdHalf <= 0;
     const touchesPipe = pipes.some((pipe) => birdX + birdHalf >= pipe.x && birdX - birdHalf <= pipe.x + CONFIG.pipeWidth && (y - birdHalf <= pipe.gapTop || y + birdHalf >= pipe.gapBottom));
-    if (touchesEdge || touchesPipe) crash();
+    const touchesLaser = pipes.some((pipe) => laserTouchesBird(pipe, birdHalf));
+    if (touchesEdge || touchesPipe || touchesLaser) crash();
   } else if (state === 'gameover') {
     secondsSinceCrash += seconds;
   }
